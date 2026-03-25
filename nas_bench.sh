@@ -190,6 +190,12 @@ deploy_workers() {
 }
 
 # ========== 阶段3: 挂载NFS ==========
+# 挂载参数遵循 NetApp TR-4067 NFS Best Practice:
+#   hard        - 必须, 防止 soft mount 导致数据损坏
+#   proto=tcp   - 显式指定 TCP (禁止 UDP)
+#   rsize/wsize=65536 - NetApp 官方推荐最佳平衡值
+#   noatime     - 减少不必要的元数据写 I/O
+#   nconnect=8  - 单挂载点多 TCP 连接并发, 内核 5.3+ 支持, 对吞吐提升显著
 mount_nfs() {
     log_step "3/${TOTAL_STEPS}" "挂载NFS存储 (${NFS_SERVER}:${NFS_PATH})..."
 
@@ -198,10 +204,27 @@ mount_nfs() {
         local ip=$(echo "$entry" | awk '{print $1}')
         local pass=$(echo "$entry" | awk '{print $2}')
 
+        # 检测远程内核版本, 5.3+ 启用 nconnect=8
+        local nconnect_opt=""
+        local remote_kver
+        remote_kver=$(ssh_exec "$ip" "$pass" "uname -r" 2>/dev/null)
+        if [ -n "$remote_kver" ]; then
+            local kver_major=$(echo "$remote_kver" | cut -d. -f1)
+            local kver_minor=$(echo "$remote_kver" | cut -d. -f2)
+            if [ "$kver_major" -gt 5 ] 2>/dev/null || { [ "$kver_major" -eq 5 ] && [ "$kver_minor" -ge 3 ]; } 2>/dev/null; then
+                nconnect_opt=",nconnect=8"
+                log_info "$ip - 内核 $remote_kver 支持 nconnect, 启用多连接并发"
+            else
+                log_info "$ip - 内核 $remote_kver 不支持 nconnect (需5.3+), 跳过"
+            fi
+        fi
+
+        local mount_opts="vers=${NFS_VERSION},rw,hard,proto=tcp,rsize=65536,wsize=65536,noatime${nconnect_opt}"
+
         ssh_exec "$ip" "$pass" "
             umount $nfs_mount_point 2>/dev/null
             mkdir -p $nfs_mount_point
-            mount -t nfs -o vers=${NFS_VERSION},rw,hard,intr,rsize=65536,wsize=65536 \
+            mount -t nfs -o ${mount_opts} \
                 ${NFS_SERVER}:${NFS_PATH} $nfs_mount_point
         "
 
@@ -209,7 +232,7 @@ mount_nfs() {
             local mount_check
             mount_check=$(ssh_exec "$ip" "$pass" "df -h $nfs_mount_point 2>/dev/null | tail -1")
             if [ -n "$mount_check" ]; then
-                log_ok "$ip -> NFSv${NFS_VERSION} 挂载成功"
+                log_ok "$ip -> NFSv${NFS_VERSION} 挂载成功 (opts: ${mount_opts})"
             else
                 log_fail "$ip -> 挂载验证失败"
             fi
