@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>nastest v1.0 - 联想凌拓 MCC NAS 性能测试工具</title>
+<style>
+:root {
+    --bg: #0D1117;
+    --surface: #161B22;
+    --surface2: #1C2333;
+    --border: #30363D;
+    --text: #E6EDF3;
+    --text2: #8B949E;
+    --accent: #185FA5;
+    --accent-light: #388BFD;
+    --green: #3FB950;
+    --green-bg: rgba(63,185,80,0.1);
+    --amber: #D29922;
+    --red: #F85149;
+}
+body.light {
+    --bg: #FFFFFF;
+    --surface: #F6F8FA;
+    --surface2: #EEF1F5;
+    --border: #D0D7DE;
+    --text: #1F2328;
+    --text2: #656D76;
+    --accent: #185FA5;
+    --accent-light: #0969DA;
+    --green: #1A7F37;
+    --green-bg: rgba(26,127,55,0.08);
+    --amber: #9A6700;
+    --red: #CF222E;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, "Microsoft YaHei", "PingFang SC", sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+.container { max-width: 900px; margin: 0 auto; padding: 40px 24px; }
+
+/* 主题切换 */
+.theme-toggle { position: fixed; top: 16px; right: 16px; z-index: 100; width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface); cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; color: var(--text2); transition: all 0.2s; }
+.theme-toggle:hover { border-color: var(--accent-light); color: var(--accent-light); }
+
+/* Hero */
+.hero { text-align: center; padding: 60px 0 40px; }
+.hero .badge { display: inline-block; padding: 4px 14px; border-radius: 20px; background: var(--green-bg); color: var(--green); font-size: 13px; font-weight: 600; margin-bottom: 16px; border: 1px solid rgba(63,185,80,0.2); }
+.hero h1 { font-size: 36px; font-weight: 700; margin-bottom: 8px; background: linear-gradient(135deg, var(--accent-light), #58A6FF); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.hero .brand { font-size: 12px; letter-spacing: 3px; color: var(--accent-light); text-transform: uppercase; margin-bottom: 16px; }
+.hero p { font-size: 17px; color: var(--text2); max-width: 600px; margin: 0 auto 30px; }
+
+/* 安装命令 */
+.install-box { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 40px; text-align: center; }
+.install-box .label { font-size: 13px; color: var(--text2); margin-bottom: 10px; }
+.install-box code { display: block; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 14px 20px; font-family: "Cascadia Code", "Fira Code", monospace; font-size: 14px; color: var(--green); word-break: break-all; }
+.install-box .note { font-size: 12px; color: var(--text2); margin-top: 8px; }
+
+/* 按钮 */
+.buttons { display: flex; gap: 12px; justify-content: center; margin-bottom: 50px; flex-wrap: wrap; }
+.btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; border-radius: 8px; font-size: 15px; font-weight: 600; text-decoration: none; transition: all 0.2s; }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-light); }
+.btn-outline { background: transparent; color: var(--text); border: 1px solid var(--border); }
+.btn-outline:hover { border-color: var(--accent-light); color: var(--accent-light); }
+
+/* 特性 */
+.features { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 50px; }
+.feature { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 22px; }
+.feature .icon { font-size: 28px; margin-bottom: 8px; }
+.feature h3 { font-size: 15px; margin-bottom: 6px; color: var(--text); }
+.feature p { font-size: 13px; color: var(--text2); line-height: 1.6; }
+
+/* 流程 */
+.section-title { font-size: 22px; font-weight: 700; text-align: center; margin-bottom: 8px; color: var(--text); }
+.section-desc { font-size: 14px; color: var(--text2); text-align: center; margin-bottom: 30px; }
+.steps { display: flex; gap: 16px; margin-bottom: 50px; }
+.step { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 22px; text-align: center; }
+.step .num { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 14px; font-weight: 700; margin-bottom: 10px; }
+.step h4 { font-size: 14px; margin-bottom: 6px; }
+.step p { font-size: 12px; color: var(--text2); }
+
+/* 代码块 */
+.code-block { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 50px; }
+.code-block .header { padding: 10px 16px; background: var(--surface2); font-size: 12px; color: var(--text2); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; }
+.code-block pre { padding: 16px; overflow-x: auto; font-family: "Cascadia Code", "Fira Code", monospace; font-size: 13px; line-height: 1.6; }
+.code-block .comment { color: var(--text2); }
+.code-block .cmd { color: var(--green); }
+
+/* 模式表格 */
+.modes-table { width: 100%; border-collapse: collapse; margin-bottom: 50px; font-size: 14px; }
+.modes-table th { background: var(--surface); color: var(--accent-light); padding: 12px 16px; text-align: left; font-weight: 600; border-bottom: 2px solid var(--border); }
+.modes-table td { padding: 12px 16px; border-bottom: 1px solid var(--border); }
+.modes-table tr:last-child td { border-bottom: none; }
+.modes-table .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+.tag-blue { background: rgba(56,139,253,0.15); color: var(--accent-light); }
+.tag-green { background: var(--green-bg); color: var(--green); }
+.tag-amber { background: rgba(210,153,34,0.15); color: var(--amber); }
+
+/* 报告预览 */
+.report-preview { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 30px; margin-bottom: 50px; text-align: center; }
+.report-preview h3 { font-size: 16px; margin-bottom: 16px; }
+.report-cards { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 16px; }
+.rp-card { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 14px 18px; min-width: 120px; }
+.rp-card .rp-label { font-size: 11px; color: var(--text2); }
+.rp-card .rp-value { font-size: 22px; font-weight: 700; }
+.rp-blue { color: var(--accent-light); }
+.rp-amber { color: var(--amber); }
+.rp-red { color: var(--red); }
+.report-preview p { font-size: 13px; color: var(--text2); }
+
+/* 页脚 */
+.footer { text-align: center; padding: 30px 0; border-top: 1px solid var(--border); margin-top: 20px; }
+.footer p { font-size: 13px; color: var(--text2); }
+.footer a { color: var(--accent-light); text-decoration: none; }
+
+@media (max-width: 600px) {
+    .features { grid-template-columns: 1fr; }
+    .steps { flex-direction: column; }
+    .hero h1 { font-size: 26px; }
+}
+</style>
+</head>
+<body>
+<button class="theme-toggle" onclick="toggleTheme()" title="切换主题">☀</button>
+<div class="container">
+
+<div class="hero">
+    <span class="badge">v1.0 Released</span>
+    <div class="brand">Lenovo NetApp Technology</div>
+    <h1>nastest</h1>
+    <p>纯 Shell 实现的 NAS 多客户端并发压力测试工具<br>专为 MetroCluster 双活存储性能验证设计</p>
+</div>
+
+<div class="install-box">
+    <div class="label">一键安装 (需要 root 权限)</div>
+    <code>curl -fsSL https://raw.githubusercontent.com/NetApptool/nastest/main/get-nastest.sh | sudo bash</code>
+    <div class="note">自动完成: 下载 → 解压 → 安装 → 启动交互式配置向导</div>
+</div>
+
+<div class="buttons">
+    <a href="https://github.com/NetApptool/nastest" class="btn btn-primary" target="_blank">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        GitHub 仓库
+    </a>
+    <a href="https://github.com/NetApptool/nastest/releases/download/v1.0/nastest-v1.0.tar.gz" class="btn btn-outline" target="_blank">
+        ⬇ 离线包下载 (8.4 MB)
+    </a>
+</div>
+
+<div class="features">
+    <div class="feature">
+        <div class="icon">🧙</div>
+        <h3>交互式配置向导</h3>
+        <p>问答式引导完成所有配置, 不需要手动编辑文件. 每填一台 Worker 立即验证 SSH 连通性.</p>
+    </div>
+    <div class="feature">
+        <div class="icon">⚡</div>
+        <h3>多客户端并发</h3>
+        <p>同时在多台 Worker VM 上执行 fio 压测, 实时进度条显示测试进度和剩余时间.</p>
+    </div>
+    <div class="feature">
+        <div class="icon">⚖️</div>
+        <h3>双站点对比</h3>
+        <p>Site A / Site B 性能均衡性分析, 专为 MetroCluster 双活架构设计, 自动计算偏差百分比.</p>
+    </div>
+    <div class="feature">
+        <div class="icon">📊</div>
+        <h3>HTML 可视化报告</h3>
+        <p>自包含单文件, 浏览器直接打开. 深蓝色银行风配色, 支持深色/浅色切换.</p>
+    </div>
+    <div class="feature">
+        <div class="icon">💬</div>
+        <h3>面向非技术人员</h3>
+        <p>自动生成通俗易懂的测试结论, 用银行柜台、高速公路等比喻解释 IOPS、延迟等术语.</p>
+    </div>
+    <div class="feature">
+        <div class="icon">📦</div>
+        <h3>零依赖部署</h3>
+        <p>内置 fio 3.37 + iperf3 3.20, 无需目标机器安装额外软件. 离线环境开箱即用.</p>
+    </div>
+    <div class="feature">
+        <div class="icon">🐧</div>
+        <h3>麒麟 Linux 兼容</h3>
+        <p>专为银行客户离线麒麟 Linux 环境设计, 纯 Shell 实现, 不依赖 Python 或任何运行时.</p>
+    </div>
+    <div class="feature">
+        <div class="icon">🔧</div>
+        <h3>灵活测试模式</h3>
+        <p>随机读写(数据库)、顺序读写(备份)、混合读写(文件服务) 三种模式, 可自定义时长.</p>
+    </div>
+</div>
+
+<div class="section-title">三步完成压测</div>
+<div class="section-desc">从安装到拿到报告, 全程不超过 10 分钟</div>
+<div class="steps">
+    <div class="step">
+        <div class="num">1</div>
+        <h4>一键安装</h4>
+        <p>curl 命令自动下载安装, 或离线包手动安装</p>
+    </div>
+    <div class="step">
+        <div class="num">2</div>
+        <h4>配置向导</h4>
+        <p>交互式填写 NFS 地址和 Worker 信息, 即时验证</p>
+    </div>
+    <div class="step">
+        <div class="num">3</div>
+        <h4>查看报告</h4>
+        <p>测试完成后自动生成 HTML 报告, 浏览器打开即可</p>
+    </div>
+</div>
+
+<div class="section-title">测试模式</div>
+<div class="section-desc">根据业务场景选择合适的测试模式</div>
+<table class="modes-table">
+    <thead><tr><th>模式</th><th>块大小</th><th>场景</th><th>命令</th></tr></thead>
+    <tbody>
+        <tr><td><span class="tag tag-blue">随机读写</span></td><td>4K</td><td>数据库 / OLTP 交易系统</td><td><code>--mode randrw</code> (默认)</td></tr>
+        <tr><td><span class="tag tag-green">顺序读写</span></td><td>1M</td><td>备份归档 / 大文件传输</td><td><code>--mode seq</code></td></tr>
+        <tr><td><span class="tag tag-amber">混合读写</span></td><td>8K</td><td>通用文件服务</td><td><code>--mode mixed</code></td></tr>
+    </tbody>
+</table>
+
+<div class="section-title">报告效果预览</div>
+<div class="section-desc">测试完成后自动生成的汇总指标卡片</div>
+<div class="report-preview">
+    <h3>汇总指标示例</h3>
+    <div class="report-cards">
+        <div class="rp-card"><div class="rp-label">总 IOPS</div><div class="rp-value rp-blue">49,600</div></div>
+        <div class="rp-card"><div class="rp-label">总吞吐</div><div class="rp-value rp-blue">193.8 <small>MB/s</small></div></div>
+        <div class="rp-card"><div class="rp-label">平均延迟</div><div class="rp-value rp-blue">0.39 <small>ms</small></div></div>
+        <div class="rp-card"><div class="rp-label">P95 延迟</div><div class="rp-value rp-amber">0.53 <small>ms</small></div></div>
+        <div class="rp-card"><div class="rp-label">P99 延迟</div><div class="rp-value rp-red">0.79 <small>ms</small></div></div>
+    </div>
+    <p>还包含: 双站点对比分析 / Worker 明细表 / 系统资源利用率 / 测试结论 / 术语解释</p>
+</div>
+
+<div class="code-block">
+    <div class="header"><span>命令参考</span><span>bash</span></div>
+    <pre><span class="comment"># 交互式配置向导 (推荐首次使用)</span>
+<span class="cmd">./nas_bench.sh setup</span>
+
+<span class="comment"># 使用已有配置开始测试</span>
+<span class="cmd">./nas_bench.sh start</span>
+<span class="cmd">./nas_bench.sh start --mode seq --duration 600</span>
+
+<span class="comment"># 检测连通性 / 清理数据</span>
+<span class="cmd">./nas_bench.sh check</span>
+<span class="cmd">./nas_bench.sh clean</span></pre>
+</div>
+
+<div class="footer">
+    <p>nastest v1.0 | <a href="https://github.com/NetApptool/nastest">GitHub</a> | 联想凌拓科技有限公司</p>
+    <p style="margin-top:4px">Built with fio 3.37 + iperf3 3.20 | Pure Shell, Zero Runtime Dependencies</p>
+</div>
+
+</div>
+
+<script>
+function toggleTheme() {
+    document.body.classList.toggle('light');
+    const btn = document.querySelector('.theme-toggle');
+    btn.textContent = document.body.classList.contains('light') ? '🌙' : '☀';
+}
+</script>
+</body>
+</html>
