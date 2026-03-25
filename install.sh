@@ -54,28 +54,70 @@ else
     echo "  SSH 服务: 已启动"
 fi
 
-# 检查NFS客户端
+# 检测包管理器
+PKG_MGR=""
+if which dnf >/dev/null 2>&1; then
+    PKG_MGR="dnf"
+elif which yum >/dev/null 2>&1; then
+    PKG_MGR="yum"
+fi
+
+# 自动安装缺失依赖
+# 依赖列表: 包名 | 检测命令 | 说明
 echo ""
-echo "[3/5] 检测NFS客户端..."
-if which mount.nfs >/dev/null 2>&1; then
-    echo "  NFS 客户端: 已安装"
-else
-    echo "  [警告] 未检测到NFS客户端"
-    if ls "$SCRIPT_DIR"/deps/nfs-utils*.rpm >/dev/null 2>&1; then
-        echo "  尝试离线安装 nfs-utils..."
-        rpm -ivh "$SCRIPT_DIR"/deps/nfs-utils*.rpm --nodeps 2>/dev/null && {
-            echo "  NFS 客户端: 离线安装成功"
-        } || {
-            echo "  [错误] 离线安装失败"
-            echo "  请手动安装: yum install -y nfs-utils"
-            exit 1
-        }
-    else
-        echo "  [错误] 未找到离线RPM包且系统中无NFS客户端"
-        echo "  请手动安装: yum install -y nfs-utils"
-        echo "  或将 nfs-utils RPM 放入 deps/ 目录后重新运行"
-        exit 1
+echo "[3/5] 检测并安装依赖..."
+
+install_pkg() {
+    local pkg_name="$1" check_cmd="$2" desc="$3"
+    if eval "$check_cmd" >/dev/null 2>&1; then
+        echo "  $desc: 已安装"
+        return 0
     fi
+
+    echo "  [缺失] $desc"
+
+    # 方法1: 在线安装
+    if [ -n "$PKG_MGR" ]; then
+        echo "  尝试在线安装 $pkg_name..."
+        if $PKG_MGR install -y $pkg_name >/dev/null 2>&1; then
+            echo "  $desc: 在线安装成功"
+            return 0
+        fi
+    fi
+
+    # 方法2: 离线RPM
+    if ls "$SCRIPT_DIR"/deps/${pkg_name}*.rpm >/dev/null 2>&1; then
+        echo "  尝试离线安装 $pkg_name..."
+        if rpm -ivh "$SCRIPT_DIR"/deps/${pkg_name}*.rpm --nodeps 2>/dev/null; then
+            echo "  $desc: 离线安装成功"
+            return 0
+        fi
+    fi
+
+    # 都失败
+    return 1
+}
+
+INSTALL_FAIL=0
+
+install_pkg "nfs-utils" "which mount.nfs" "NFS客户端 (nfs-utils)" || {
+    echo "  [错误] nfs-utils 安装失败, NFS挂载将不可用"
+    echo "  请手动安装: $PKG_MGR install -y nfs-utils"
+    INSTALL_FAIL=1
+}
+
+install_pkg "sshpass" "which sshpass" "SSH密码工具 (sshpass)" || {
+    echo "  [警告] sshpass 安装失败, 将使用SSH密钥认证"
+}
+
+install_pkg "libaio" "ldconfig -p 2>/dev/null | grep -q libaio" "异步IO库 (libaio)" || {
+    echo "  [警告] libaio 安装失败, fio 可能无法使用 libaio 引擎"
+}
+
+if [ "$INSTALL_FAIL" -eq 1 ]; then
+    echo ""
+    echo "  [错误] 关键依赖缺失, 请手动安装后重新运行 install.sh"
+    exit 1
 fi
 
 # 部署文件
