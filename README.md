@@ -10,6 +10,12 @@
 curl -fsSL https://raw.githubusercontent.com/NetApptool/nastest/main/get-nastest.sh | sudo bash
 ```
 
+如果系统未预装 tar (最小化安装的 Rocky/CentOS 可能缺少), 用这条:
+
+```bash
+dnf install -y tar gzip && curl -fsSL https://raw.githubusercontent.com/NetApptool/nastest/main/get-nastest.sh | sudo bash
+```
+
 自动完成: 下载 → 解压 → 安装 → 启动交互式配置向导.
 
 ## 离线安装
