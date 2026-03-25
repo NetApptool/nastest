@@ -33,6 +33,20 @@ if [ "$ARCH" != "x86_64" ]; then
     exit 1
 fi
 
+# 检查必要命令
+MISSING=""
+for cmd in tar gzip; do
+    if ! which $cmd >/dev/null 2>&1; then
+        MISSING="$MISSING $cmd"
+    fi
+done
+if [ -n "$MISSING" ]; then
+    echo -e "${RED}[错误] 缺少必要命令:${MISSING}${NC}"
+    echo "  请先安装: yum install -y tar gzip  或  dnf install -y tar gzip"
+    rm -rf "$TMP_DIR"
+    exit 1
+fi
+
 # 下载
 echo -e "  下载 nastest ${VERSION}..."
 DOWNLOAD_URL="https://github.com/${REPO}/releases/download/${VERSION}/nastest-${VERSION}.tar.gz"
